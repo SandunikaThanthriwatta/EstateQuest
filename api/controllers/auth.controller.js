@@ -3,7 +3,7 @@ import bcryptjs from 'bcryptjs';
 import { errorHandler } from '../utils/error.js';
 
 
-export const signup=async(req,res,next)=>{//async is used as await is used below
+export const signup=async(req,res,next)=>{//async is used as await is used below//next is used to call the middleware
 
    const{username,email,password}=req.body;
    const hashedPassword=bcryptjs.hashSync(password,10); //encrypt the password
