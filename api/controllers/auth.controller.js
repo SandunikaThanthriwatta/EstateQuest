@@ -55,7 +55,7 @@ export const google=async(req,res,next)=>{
         }else{
             const generatePassword=Math.random().toString(36).slice(-8)+Math.random().toString(36).slice(-8);
             const hashedPassword=bycryptjs.hashSync(generatedPassword,10);
-            const newUser=new User({username:req.body.name.split(" ").join("").toLowerCase()+Math.random().toString(36).slice(-4),email:req.body.email,password:hashedPassword,avatar:req.body.photo});
+            const newUser=new User({username:req.body.name.split(" ").join("").toLowerCase()+Math.random().toString(36).slice(-4),email:req.body.email,password:hashedPassword,avatar:req.body.photo,});
 
             await newUser.save();
             const token=jwt.sign({id:newUser._id},process.env.JWT_SECRET);
@@ -70,6 +70,7 @@ export const google=async(req,res,next)=>{
 
 
     } catch (error) {
+        next(error);
         
     }
 }
