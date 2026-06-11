@@ -1,7 +1,2 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body{
-    background-color:rgb(241,245,241)
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif; }
