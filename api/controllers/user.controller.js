@@ -17,14 +17,13 @@ export const updateUser=async (req,res,next)=>{
             req.body.password =bcryptjs.hashSync(req.body.password,10)
         }
 
-        const updateUser=await User.findByIdAndUpdate(req.params.id,{
-            $set:{
-                username:req.body.username,
-                email:req.body.email,
-                password:req.body.password,
-                avatar:req.body.avatar,
-            }
-        },{new:true})
+        const fields = {};
+        if (req.body.username !== undefined) fields.username = req.body.username;
+        if (req.body.email    !== undefined) fields.email    = req.body.email;
+        if (req.body.password !== undefined) fields.password = req.body.password;
+        if (req.body.avatar   !== undefined) fields.avatar   = req.body.avatar;
+
+        const updateUser=await User.findByIdAndUpdate(req.params.id,{$set:fields},{new:true})
 
         const {password,...rest}=updateUser._doc
         res.status(200).json(rest);

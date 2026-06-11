@@ -1,13 +1,6 @@
 import { useSelector } from 'react-redux';
 import { useRef, useState, useEffect } from 'react';
 import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from 'firebase/storage';
-import { app } from '../firebase';
-import {
   updateUserStart,
   updateUserSuccess,
   updateUserFailure,
@@ -42,28 +35,19 @@ export default function Profile() {
     }
   }, [file]);
 
-  const handleFileUpload = (file) => {
-    const storage = getStorage(app);
-    const fileName = new Date().getTime() + file.name;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setFilePerc(Math.round(progress));
-      },
-      (error) => {
-        setFileUploadError(true);
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) =>
-          setFormData({ ...formData, avatar: downloadURL })
-        );
-      }
-    );
+  const handleFileUpload = async (file) => {
+    try {
+      setFilePerc(50);
+      const data = new FormData();
+      data.append('image', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: data });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Upload failed');
+      setFilePerc(100);
+      setFormData((prev) => ({ ...prev, avatar: json.url }));
+    } catch (error) {
+      setFileUploadError(true);
+    }
   };
 
   const handleChange = (e) => {
@@ -78,6 +62,7 @@ export default function Profile() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`,
         },
         body: JSON.stringify(formData),
       });
@@ -99,6 +84,7 @@ export default function Profile() {
       dispatch(deleteUserStart());
       const res = await fetch(`/api/user/delete/${currentUser._id}`, {
         method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${currentUser.token}` },
       });
       const data = await res.json();
       if (data.success === false) {
@@ -129,7 +115,9 @@ export default function Profile() {
   const handleShowListings = async () => {
     try {
       setShowListingsError(false);
-      const res = await fetch(`/api/user/listings/${currentUser._id}`);
+      const res = await fetch(`/api/user/listings/${currentUser._id}`, {
+        headers: { 'Authorization': `Bearer ${currentUser.token}` },
+      });
       const data = await res.json();
       if (data.success === false) {
         setShowListingsError(true);
@@ -146,6 +134,7 @@ export default function Profile() {
     try {
       const res = await fetch(`/api/listing/delete/${listingId}`, {
         method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${currentUser.token}` },
       });
       const data = await res.json();
       if (data.success === false) {
