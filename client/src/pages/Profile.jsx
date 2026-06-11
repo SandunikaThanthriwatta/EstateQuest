@@ -1,16 +1,17 @@
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useRef, useState, useEffect } from 'react';
 import {
-  updateUserStart,
-  updateUserSuccess,
-  updateUserFailure,
-  deleteUserFailure,
-  deleteUserStart,
-  deleteUserSuccess,
-  signOutUserStart,
+  updateUserStart, updateUserSuccess, updateUserFailure,
+  deleteUserFailure, deleteUserStart, deleteUserSuccess, signOutUserStart,
 } from '../redux/user/userSlice';
-import { useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
+import {
+  Box, Container, Paper, Typography, TextField, Button, Avatar,
+  Divider, Alert, CircularProgress, Card, CardContent, CardMedia,
+  IconButton, Tooltip,
+} from '@mui/material';
+import { Icon } from '@iconify/react';
+
 export default function Profile() {
   const fileRef = useRef(null);
   const { currentUser, loading, error } = useSelector((state) => state.user);
@@ -23,20 +24,11 @@ export default function Profile() {
   const [userListings, setUserListings] = useState([]);
   const dispatch = useDispatch();
 
-  // firebase storage
-  // allow read;
-  // allow write: if
-  // request.resource.size < 2 * 1024 * 1024 &&
-  // request.resource.contentType.matches('image/.*')
-
-  useEffect(() => {
-    if (file) {
-      handleFileUpload(file);
-    }
-  }, [file]);
+  useEffect(() => { if (file) handleFileUpload(file); }, [file]);
 
   const handleFileUpload = async (file) => {
     try {
+      setFileUploadError(false);
       setFilePerc(50);
       const data = new FormData();
       data.append('image', file);
@@ -45,14 +37,13 @@ export default function Profile() {
       if (!res.ok) throw new Error(json.message || 'Upload failed');
       setFilePerc(100);
       setFormData((prev) => ({ ...prev, avatar: json.url }));
-    } catch (error) {
+    } catch {
       setFileUploadError(true);
+      setFilePerc(0);
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
-  };
+  const handleChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,15 +58,11 @@ export default function Profile() {
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      if (data.success === false) {
-        dispatch(updateUserFailure(data.message));
-        return;
-      }
-
+      if (data.success === false) { dispatch(updateUserFailure(data.message)); return; }
       dispatch(updateUserSuccess(data));
       setUpdateSuccess(true);
-    } catch (error) {
-      dispatch(updateUserFailure(error.message));
+    } catch (err) {
+      dispatch(updateUserFailure(err.message));
     }
   };
 
@@ -87,28 +74,20 @@ export default function Profile() {
         headers: { 'Authorization': `Bearer ${currentUser.token}` },
       });
       const data = await res.json();
-      if (data.success === false) {
-        dispatch(deleteUserFailure(data.message));
-        return;
-      }
+      if (data.success === false) { dispatch(deleteUserFailure(data.message)); return; }
       dispatch(deleteUserSuccess(data));
-    } catch (error) {
-      dispatch(deleteUserFailure(error.message));
+    } catch (err) {
+      dispatch(deleteUserFailure(err.message));
     }
   };
 
   const handleSignOut = async () => {
     try {
       dispatch(signOutUserStart());
-      const res = await fetch('/api/auth/signout');
-      const data = await res.json();
-      if (data.success === false) {
-        dispatch(deleteUserFailure(data.message));
-        return;
-      }
-      dispatch(deleteUserSuccess(data));
-    } catch (error) {
-      dispatch(deleteUserFailure(data.message));
+      await fetch('/api/auth/signout');
+      dispatch(deleteUserSuccess());
+    } catch (err) {
+      dispatch(deleteUserFailure(err.message));
     }
   };
 
@@ -119,13 +98,9 @@ export default function Profile() {
         headers: { 'Authorization': `Bearer ${currentUser.token}` },
       });
       const data = await res.json();
-      if (data.success === false) {
-        setShowListingsError(true);
-        return;
-      }
-
+      if (data.success === false) { setShowListingsError(true); return; }
       setUserListings(data);
-    } catch (error) {
+    } catch {
       setShowListingsError(true);
     }
   };
@@ -137,146 +112,124 @@ export default function Profile() {
         headers: { 'Authorization': `Bearer ${currentUser.token}` },
       });
       const data = await res.json();
-      if (data.success === false) {
-        console.log(data.message);
-        return;
-      }
-
-      setUserListings((prev) =>
-        prev.filter((listing) => listing._id !== listingId)
-      );
-    } catch (error) {
-      console.log(error.message);
+      if (data.success === false) { console.log(data.message); return; }
+      setUserListings((prev) => prev.filter((l) => l._id !== listingId));
+    } catch (err) {
+      console.log(err.message);
     }
   };
+
+  const avatarSrc = formData.avatar || currentUser.avatar;
+
   return (
-    <div className='p-3 max-w-lg mx-auto'>
-      <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
-      <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
-        <input
-          onChange={(e) => setFile(e.target.files[0])}
-          type='file'
-          ref={fileRef}
-          hidden
-          accept='image/*'
-        />
-        <img
-          onClick={() => fileRef.current.click()}
-          src={formData.avatar || currentUser.avatar}
-          alt='profile'
-          className='rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2'
-        />
-        <p className='text-sm self-center'>
-          {fileUploadError ? (
-            <span className='text-red-700'>
-              Error Image upload (image must be less than 2 mb)
-            </span>
-          ) : filePerc > 0 && filePerc < 100 ? (
-            <span className='text-slate-700'>{`Uploading ${filePerc}%`}</span>
-          ) : filePerc === 100 ? (
-            <span className='text-green-700'>Image successfully uploaded!</span>
-          ) : (
-            ''
-          )}
-        </p>
-        <input
-          type='text'
-          placeholder='username'
-          defaultValue={currentUser.username}
-          id='username'
-          className='border p-3 rounded-lg'
-          onChange={handleChange}
-        />
-        <input
-          type='email'
-          placeholder='email'
-          id='email'
-          defaultValue={currentUser.email}
-          className='border p-3 rounded-lg'
-          onChange={handleChange}
-        />
-        <input
-          type='password'
-          placeholder='password'
-          onChange={handleChange}
-          id='password'
-          className='border p-3 rounded-lg'
-        />
-        <button
-          disabled={loading}
-          className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'
-        >
-          {loading ? 'Loading...' : 'Update'}
-        </button>
-        <Link
-          className='bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95'
-          to={'/create-listing'}
-        >
-          Create Listing
-        </Link>
-      </form>
-      <div className='flex justify-between mt-5'>
-        <span
-          onClick={handleDeleteUser}
-          className='text-red-700 cursor-pointer'
-        >
-          Delete account
-        </span>
-        <span onClick={handleSignOut} className='text-red-700 cursor-pointer'>
-          Sign out
-        </span>
-      </div>
+    <Box sx={{ bgcolor: 'background.default', minHeight: '92vh', py: 4 }}>
+      <Container maxWidth="sm">
+        <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
+          <Typography variant="h5" fontWeight={700} color="primary" textAlign="center" mb={3}>
+            My Profile
+          </Typography>
 
-      <p className='text-red-700 mt-5'>{error ? error : ''}</p>
-      <p className='text-green-700 mt-5'>
-        {updateSuccess ? 'User is updated successfully!' : ''}
-      </p>
-      <button onClick={handleShowListings} className='text-green-700 w-full'>
-        Show Listings
-      </button>
-      <p className='text-red-700 mt-5'>
-        {showListingsError ? 'Error showing listings' : ''}
-      </p>
+          {/* Avatar upload */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+            <input ref={fileRef} type="file" hidden accept="image/*" onChange={(e) => setFile(e.target.files[0])} />
+            <Tooltip title="Click to change photo">
+              <Avatar
+                src={avatarSrc}
+                alt={currentUser.username}
+                onClick={() => fileRef.current.click()}
+                sx={{ width: 96, height: 96, cursor: 'pointer', border: '3px solid', borderColor: 'primary.light',
+                  '&:hover': { opacity: 0.85 } }}
+              />
+            </Tooltip>
+            <Typography variant="caption" color="text.secondary" mt={1}>
+              {fileUploadError
+                ? <span style={{ color: '#C62828' }}>Upload failed (max 2 MB)</span>
+                : filePerc > 0 && filePerc < 100
+                  ? `Uploading ${filePerc}%…`
+                  : filePerc === 100
+                    ? <span style={{ color: '#2E7D32' }}>Photo updated!</span>
+                    : 'Click photo to change'}
+            </Typography>
+          </Box>
 
-      {userListings && userListings.length > 0 && (
-        <div className='flex flex-col gap-4'>
-          <h1 className='text-center mt-7 text-2xl font-semibold'>
-            Your Listings
-          </h1>
-          {userListings.map((listing) => (
-            <div
-              key={listing._id}
-              className='border rounded-lg p-3 flex justify-between items-center gap-4'
-            >
-              <Link to={`/listing/${listing._id}`}>
-                <img
-                  src={listing.imageUrls[0]}
-                  alt='listing cover'
-                  className='h-16 w-16 object-contain'
-                />
-              </Link>
-              <Link
-                className='text-slate-700 font-semibold  hover:underline truncate flex-1'
-                to={`/listing/${listing._id}`}
-              >
-                <p>{listing.name}</p>
-              </Link>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {updateSuccess && <Alert severity="success" sx={{ mb: 2 }}>Profile updated successfully!</Alert>}
 
-              <div className='flex flex-col item-center'>
-                <button
-                  onClick={() => handleListingDelete(listing._id)}
-                  className='text-red-700 uppercase'
-                >
-                  Delete
-                </button>
-                <Link to={`/update-listing/${listing._id}`}>
-                  <button className='text-green-700 uppercase'>Edit</button>
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+          {/* Form */}
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField fullWidth label="Username" id="username" defaultValue={currentUser.username} onChange={handleChange}
+              InputProps={{ startAdornment: <Icon icon="mdi:account-outline" style={{ marginRight: 8, color: '#5C6070' }} /> }} />
+            <TextField fullWidth label="Email" type="email" id="email" defaultValue={currentUser.email} onChange={handleChange}
+              InputProps={{ startAdornment: <Icon icon="mdi:email-outline" style={{ marginRight: 8, color: '#5C6070' }} /> }} />
+            <TextField fullWidth label="New Password" type="password" id="password" onChange={handleChange}
+              InputProps={{ startAdornment: <Icon icon="mdi:lock-outline" style={{ marginRight: 8, color: '#5C6070' }} /> }} />
+            <Button fullWidth variant="contained" color="primary" size="large" type="submit"
+              disabled={loading} startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <Icon icon="mdi:content-save-outline" />}>
+              {loading ? 'Saving…' : 'Update Profile'}
+            </Button>
+            <Button fullWidth variant="outlined" color="primary" size="large" component={Link} to="/create-listing"
+              startIcon={<Icon icon="mdi:plus-circle-outline" />}>
+              Create Listing
+            </Button>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Button color="error" startIcon={<Icon icon="mdi:delete-outline" />} onClick={handleDeleteUser}>
+              Delete Account
+            </Button>
+            <Button color="warning" startIcon={<Icon icon="mdi:logout" />} onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </Box>
+        </Paper>
+
+        {/* Listings */}
+        <Box mt={3} textAlign="center">
+          <Button variant="outlined" color="primary" onClick={handleShowListings}
+            startIcon={<Icon icon="mdi:format-list-bulleted" />}>
+            Show My Listings
+          </Button>
+          {showListingsError && <Alert severity="error" sx={{ mt: 2 }}>Error loading listings</Alert>}
+        </Box>
+
+        {userListings.length > 0 && (
+          <Box mt={3}>
+            <Typography variant="h6" fontWeight={700} color="primary" textAlign="center" mb={2}>
+              My Listings
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {userListings.map((listing) => (
+                <Card key={listing._id} sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+                  <CardMedia component={Link} to={`/listing/${listing._id}`}>
+                    <Box component="img" src={listing.imageUrls[0]} alt={listing.name}
+                      sx={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 1 }} />
+                  </CardMedia>
+                  <CardContent sx={{ flex: 1, py: '8px !important' }}>
+                    <Typography component={Link} to={`/listing/${listing._id}`} variant="subtitle2"
+                      fontWeight={700} color="text.primary" sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                      {listing.name}
+                    </Typography>
+                  </CardContent>
+                  <Box sx={{ display: 'flex', gap: 0.5, pr: 1 }}>
+                    <Tooltip title="Edit">
+                      <IconButton component={Link} to={`/update-listing/${listing._id}`} color="primary" size="small">
+                        <Icon icon="mdi:pencil-outline" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton color="error" size="small" onClick={() => handleListingDelete(listing._id)}>
+                        <Icon icon="mdi:delete-outline" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Card>
+              ))}
+            </Box>
+          </Box>
+        )}
+      </Container>
+    </Box>
   );
 }
