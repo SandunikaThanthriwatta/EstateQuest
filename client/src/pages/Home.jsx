@@ -58,7 +58,7 @@ export default function Home() {
     <Box sx={{ bgcolor: 'background.default', overflow: 'hidden' }}>
 
       {/* ── HERO FULLSCREEN SLIDER ── */}
-      <Box sx={{ position: 'relative', height: { xs: '92vh', md: '95vh' } }}>
+      <Box sx={{ position: 'relative', height: '100vh' }}>
         <Swiper effect="fade" autoplay={{ delay: 5000, disableOnInteraction: false }}
           pagination={{ clickable: true }} loop style={{ height: '100%' }}>
           {heroSlides.map((s, i) => (
@@ -189,11 +189,12 @@ export default function Home() {
                   sx={{ fontWeight: 600 }}>Show more</Button>
               </Box>
             </motion.div>
-            <Grid container spacing={3}>
+            <Grid container spacing={3} alignItems="stretch">
               {data.map((listing, i) => (
-                <Grid item key={listing._id} xs={12} sm={6} md={4} lg={3}>
+                <Grid item key={listing._id} xs={12} sm={6} md={4} lg={3} sx={{ display: 'flex' }}>
                   <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.5 }}>
+                    viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.5 }}
+                    style={{ width: '100%', height: '100%', display: 'flex' }}>
                     <ListingItem listing={listing} />
                   </motion.div>
                 </Grid>

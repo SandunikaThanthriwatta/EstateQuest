@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Container, Typography, TextField, Button, Checkbox,
   FormControlLabel, FormGroup, Select, MenuItem, FormControl,
-  InputLabel, Divider, Grid, Paper, CircularProgress,
+  InputLabel, Divider, Paper, CircularProgress,
 } from '@mui/material';
 import { Icon } from '@iconify/react';
 import ListingItem from '../components/ListingItem';
@@ -32,9 +32,10 @@ export default function Search() {
     const fetchListings = async () => {
       setLoading(true);
       setShowMore(false);
+      if (!urlParams.has('limit')) urlParams.set('limit', '20');
       const res = await fetch(`/api/listing/get?${urlParams.toString()}`);
       const data = await res.json();
-      setShowMore(data.length > 8);
+      setShowMore(data.length >= 20);
       setListings(data);
       setLoading(false);
     };
@@ -134,7 +135,7 @@ export default function Search() {
       </Paper>
 
       {/* Results */}
-      <Box flex={1} p={3}>
+      <Box sx={{ flex: 1, minWidth: 0, p: 3 }}>
         <Typography variant="h5" fontWeight={700} color="primary" mb={3}>
           Search Results
         </Typography>
@@ -147,13 +148,22 @@ export default function Search() {
             <Typography variant="h6" color="text.secondary" mt={2}>No listings found</Typography>
           </Box>
         )}
-        <Grid container spacing={3}>
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
+            lg: 'repeat(4, 1fr)',
+          },
+          gap: 3,
+          alignItems: 'stretch',
+        }}>
           {!loading && listings.map((listing) => (
-            <Grid item key={listing._id} xs={12} sm={6} lg={4}>
+            <Box key={listing._id} sx={{ display: 'flex', minWidth: 0 }}>
               <ListingItem listing={listing} />
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
         {showMore && (
           <Box textAlign="center" mt={4}>
             <Button variant="outlined" color="primary" onClick={onShowMoreClick}
