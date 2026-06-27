@@ -148,28 +148,6 @@ npm run dev
 
 ---
 
-## 🗺️ Pages
 
-| Page | Route | Description |
-|---|---|---|
-| 🏠 Home | `/` | Hero + featured listings |
-| 🔍 Search | `/search` | Filter & browse all listings |
-| 🏘️ Listing | `/listing/:id` | Full property detail + image gallery |
-| ➕ Create | `/create-listing` | Post a new property |
-| ✏️ Update | `/update-listing/:id` | Edit your listing |
-| 👤 Profile | `/profile` | Manage account & your listings |
-| 🔑 Sign In | `/sign-in` | Login |
-| 📝 Sign Up | `/sign-up` | Register |
-| ℹ️ About | `/about` | About page |
 
----
 
-## 👩‍💻 Author
-
-Made with ❤️ by **Sandunika Thanthriwatta**
-
----
-
-## 📄 License
-
-This project is licensed under the **ISC License**.
